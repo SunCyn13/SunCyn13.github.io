@@ -7,3 +7,7 @@ MyCV
 chayanin.l@ku.th
 
 https://github.com/SunCyn13/SunCyn13.github.io#suncyn13githubio
+
+Interactive Computer Graphics
+
+SunCyn13.github.io
