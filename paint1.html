@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>CV and Raster Graphics - Assignment 2 Paint</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    .toolbar {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      margin-bottom: 15px;
+      background-color: #f0f0f0;
+      padding: 10px;
+      border-radius: 8px;
+      flex-wrap: wrap;
+    }
+    .toolbar label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: bold;
+    }
+    .clear-btn {
+      background-color: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .clear-btn:hover {
+      background-color: #cc0000;
+    }
+    #canvas {
+      width: 1000px;
+      height: 1000px;
+      border: 1px solid #000;
+      image-rendering: pixelated;
+      cursor: crosshair;
+    }
+  </style>
+</head>
+<body>
+
+<h1>ชยนิน เล้าโสภาภิรมย์</h1>
+<p>chayanin.l@ku.th</p>
+<p>https://github.com/SunCyn13/SunCyn13.github.io#suncyn13githubio</p>
+<br>
+
+<!-- แถบเครื่องมือสำหรับเลือก Tool, Color, Thickness และ Clear Canvas -->
+<div class="toolbar">
+  <label for="toolSelect">เครื่องมือ:
+    <select id="toolSelect">
+      <option value="pencil">✏️ ดินสอ</option>
+      <option value="line">📏 วาดเส้น</option>
+      <option value="rect">⬛ วาดสี่เหลี่ยม</option>
+      <option value="ellipse">⭕ วาดวงรี/กลม</option>
+      <option value="eraser">🧹 ยางลบ</option>
+    </select>
+  </label>
+
+  <label for="colorPicker">สี:
+    <input type="color" id="colorPicker" value="#000000">
+  </label>
+
+  <label for="thickness">ความหนาเส้น:
+    <input type="range" id="thickness" min="1" max="20" value="2">
+    <span id="thicknessVal">2</span>px
+  </label>
+
+  <!-- ปุ่มสำหรับเคลียร์รูปภาพ -->
+  <button id="clearBtn" class="clear-btn">🗑️ ล้างหน้ากระดาษ</button>
+</div>
+
+<canvas id="canvas" width="200" height="200"></canvas>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const imageData = ctx.createImageData(canvas.width, canvas.height);
+const pixels = imageData.data; // Array of color [R,G,B,A, R,G,B,A, ...]
+
+// Snapshot Data สำหรับรองรับการ Preview รูปทรงก่อนวางจริง
+const snapshotData = new Uint8ClampedArray(pixels.length);
+
+// Elements UI
+const toolSelect = document.getElementById('toolSelect');
+const colorPicker = document.getElementById('colorPicker');
+const thicknessInput = document.getElementById('thickness');
+const thicknessVal = document.getElementById('thicknessVal');
+const clearBtn = document.getElementById('clearBtn');
+
+thicknessInput.addEventListener('input', (e) => {
+  thicknessVal.textContent = e.target.value;
+});
+
+// ฟังก์ชันแปลง Hex Color (#RRGGBB) เป็น RGB
+function hexToRgb(hex) {
+  const num = parseInt(hex.slice(1), 16);
+  return {
+    r: (num >> 16) & 255,
+    g: (num >> 8) & 255,
+    b: num & 255
+  };
+}
+
+// เคลียร์ Canvas ให้เป็นสีขาว
+function clearCanvasWhite() {
+  for (let i = 0; i < pixels.length; i += 4) {
+    pixels[i] = 255;     // R
+    pixels[i + 1] = 255; // G
+    pixels[i + 2] = 255; // B
+    pixels[i + 3] = 255; // A
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
+// กดปุ่มเคลียร์รูปภาพ
+clearBtn.addEventListener('click', () => {
+  if (confirm("คุณต้องการล้างหน้ากระดาษทั้งหมดใช่หรือไม่?")) {
+    clearCanvasWhite();
+  }
+});
+
+function putPixel(x, y, r, g, b, a = 255) {
+  if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return;
+  const idx = (y * canvas.width + x) * 4;
+  pixels[idx] = r;
+  pixels[idx + 1] = g;
+  pixels[idx + 2] = b;
+  pixels[idx + 3] = a;
+}
+
+// วาดจุดกลมตามขนาดความหนา (Brush/Thickness)
+function drawBrushPoint(cx, cy, thickness, r, g, b) {
+  const radius = thickness / 2;
+  const rCeil = Math.ceil(radius);
+  for (let dy = -rCeil; dy <= rCeil; dy++) {
+    for (let dx = -rCeil; dx <= rCeil; dx++) {
+      if (dx * dx + dy * dy <= radius * radius) {
+        putPixel(Math.round(cx + dx), Math.round(cy + dy), r, g, b);
+      }
+    }
+  }
+}
+
+// วาดเส้นตรงตามขนาดความหนา
+function drawThickLine(x1, y1, x2, y2, thickness, r, g, b) {
+  const dx = Math.abs(x2 - x1);
+  const dy = Math.abs(y2 - y1);
+  const steps = Math.max(dx, dy);
+
+  if (steps === 0) {
+    drawBrushPoint(x1, y1, thickness, r, g, b);
+    return;
+  }
+
+  const xInc = (x2 - x1) / steps;
+  const yInc = (y2 - y1) / steps;
+
+  let x = x1;
+  let y = y1;
+  for (let i = 0; i <= steps; i++) {
+    drawBrushPoint(Math.round(x), Math.round(y), thickness, r, g, b);
+    x += xInc;
+    y += yInc;
+  }
+}
+
+// วาดสี่เหลี่ยมแบบกรอบตามความหนา
+function drawThickRect(x1, y1, x2, y2, thickness, r, g, b) {
+  drawThickLine(x1, y1, x2, y1, thickness, r, g, b);
+  drawThickLine(x2, y1, x2, y2, thickness, r, g, b);
+  drawThickLine(x2, y2, x1, y2, thickness, r, g, b);
+  drawThickLine(x1, y2, x1, y1, thickness, r, g, b);
+}
+
+// วาดวงรี/วงกลมแบบกรอบตามความหนา
+function drawThickEllipse(x1, y1, x2, y2, thickness, r, g, b) {
+  const cx = (x1 + x2) / 2;
+  const cy = (y1 + y2) / 2;
+  const rx = Math.abs(x2 - x1) / 2;
+  const ry = Math.abs(y2 - y1) / 2;
+
+  if (rx === 0 || ry === 0) return;
+
+  const steps = Math.ceil(Math.max(rx, ry) * 8);
+  for (let i = 0; i < steps; i++) {
+    const theta = (i / steps) * 2 * Math.PI;
+    const px = cx + rx * Math.cos(theta);
+    const py = cy + ry * Math.sin(theta);
+    drawBrushPoint(px, py, thickness, r, g, b);
+  }
+}
+
+function toScaledMousePos(posX, posY) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    x: Math.floor((posX - rect.left) * scaleX),
+    y: Math.floor((posY - rect.top) * scaleY)
+  };
+}
+
+// ตัวแปรควบคุมการลากเมาส์
+let isDragging = false;
+let startX = 0, startY = 0;
+let lastX = 0, lastY = 0;
+
+// Event Listeners
+canvas.addEventListener('mousedown', (event) => {
+  isDragging = true;
+  const { x, y } = toScaledMousePos(event.clientX, event.clientY);
+  startX = x;
+  startY = y;
+  lastX = x;
+  lastY = y;
+
+  // บันทึกสถานะพิกเซลปัจจุบันก่อนวาดรูปทรงใหม่ (สำหรับ Preview)
+  snapshotData.set(pixels);
+
+  const tool = toolSelect.value;
+  const thickness = parseInt(thicknessInput.value);
+  const color = hexToRgb(colorPicker.value);
+
+  if (tool === 'pencil') {
+    drawBrushPoint(x, y, thickness, color.r, color.g, color.b);
+    ctx.putImageData(imageData, 0, 0);
+  } else if (tool === 'eraser') {
+    drawBrushPoint(x, y, thickness, 255, 255, 255);
+    ctx.putImageData(imageData, 0, 0);
+  }
+});
+
+canvas.addEventListener('mousemove', (event) => {
+  if (!isDragging) return;
+
+  const { x, y } = toScaledMousePos(event.clientX, event.clientY);
+  const tool = toolSelect.value;
+  const thickness = parseInt(thicknessInput.value);
+  const color = hexToRgb(colorPicker.value);
+
+  if (tool === 'pencil') {
+    drawThickLine(lastX, lastY, x, y, thickness, color.r, color.g, color.b);
+    lastX = x;
+    lastY = y;
+  } else if (tool === 'eraser') {
+    drawThickLine(lastX, lastY, x, y, thickness, 255, 255, 255);
+    lastX = x;
+    lastY = y;
+  } else {
+    // คืนค่า snapshot เดิมก่อนวาดกรอบ Preview
+    pixels.set(snapshotData);
+
+    if (tool === 'line') {
+      drawThickLine(startX, startY, x, y, thickness, color.r, color.g, color.b);
+    } else if (tool === 'rect') {
+      drawThickRect(startX, startY, x, y, thickness, color.r, color.g, color.b);
+    } else if (tool === 'ellipse') {
+      drawThickEllipse(startX, startY, x, y, thickness, color.r, color.g, color.b);
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+});
+
+canvas.addEventListener('mouseup', () => {
+  isDragging = false;
+});
+
+canvas.addEventListener('mouseleave', () => {
+  isDragging = false;
+});
+
+// เริ่มต้น Canvas เป็นสีขาว
+clearCanvasWhite();
+</script>
+
+</body>
+</html>
