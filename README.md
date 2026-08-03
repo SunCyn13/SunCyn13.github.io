@@ -6,8 +6,10 @@ MyCV
 
 chayanin.l@ku.th
 
-https://github.com/SunCyn13/SunCyn13.github.io#suncyn13githubio
-
 Interactive Computer Graphics
 
-[SunCyn13.github.io](https://suncyn13.github.io)
+SunCyn13.github.io/sprite.html
+
+SunCyn13.github.io/paint1.html
+
+SunCyn13.github.io/tires.obj
