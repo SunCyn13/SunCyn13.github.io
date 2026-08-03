@@ -8,8 +8,8 @@ chayanin.l@ku.th
 
 Interactive Computer Graphics
 
-SunCyn13.github.io/sprite.html
+[sprite](https://suncyn13.github.io/sprite.html)
 
-SunCyn13.github.io/paint1.html
+[paint1](https://suncyn13.github.io/paint1.html)
 
-SunCyn13.github.io/tires.obj
+[UVVertexColor](https://suncyn13.github.io/gpuMesh_Vertex_UV_VertexColor.html)
