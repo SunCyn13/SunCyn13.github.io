@@ -24,5 +24,4 @@ GPUMesh_UV
 [GPUMesh_UV_tires.html](https://suncyn13.github.io/gpuMesh_UV_tires.html)
 
 Assignment 3
-
 [Integra.html](https://sunCyn13.github.io/Integra.html)
