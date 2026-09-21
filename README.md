@@ -20,3 +20,6 @@ GPUMesh_UV :
 
 Assignment 3 : 
 [Integra.html](https://sunCyn13.github.io/Integra.html)
+
+picking :
+[picking2.html](https://suncyn13.github.io/picking2.html)
