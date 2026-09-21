@@ -23,3 +23,6 @@ Assignment 3 :
 
 picking :
 [picking2.html](https://suncyn13.github.io/picking2.html)
+
+Interactive3D
+[3Dinteractive.html](https://suncyn13.github.io/3Dinteractive.html)
